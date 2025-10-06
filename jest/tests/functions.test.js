@@ -163,5 +163,3 @@ describe("minimum depth of binary tree", () => {
         });
     });
 });
-
-

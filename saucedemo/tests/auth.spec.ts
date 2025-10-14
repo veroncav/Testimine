@@ -588,8 +588,16 @@ test("Burger-menüü: All Items, About, Reset App State", async ({ page }) => {
     await expect(page).toHaveURL('https://saucelabs.com/');
     await page.goBack();
 
-    // Reset App State
+    // Logout
     await expect(page).toHaveURL('/inventory.html');
+    await burgerMenuButton.click();
+    let logoutLink = page.locator("id=logout_sidebar_link");
+    await logoutLink.click();
+    await expect(page).toHaveURL('/');
+    await login_standard_user(page);
+    await expect(page).toHaveURL('/inventory.html');
+
+    // Reset App State
     let firstElementAddToCart = page.locator("id=add-to-cart-sauce-labs-backpack");
     await firstElementAddToCart.click();
     await expect(cartBadge).toHaveText("1");

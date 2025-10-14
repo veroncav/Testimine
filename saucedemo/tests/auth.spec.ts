@@ -1,8 +1,31 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 const USER = "standard_user";
+const PROBLEM_USER = "problem_user";
 const PASSWORD = "secret_sauce";
 
+// === Funktsioonid sisselogimiseks ===
+async function login_standard_user(page: Page) {
+    await page.goto('/');
+    await page.getByPlaceholder('Username').fill(USER);
+    await page.getByPlaceholder('Password').fill(PASSWORD);
+    await page.getByText('Login').click();
+
+    await expect(page).toHaveURL('/inventory.html');
+}
+
+async function login_problem_user(page: Page) {
+    await page.goto('/');
+    await page.getByPlaceholder('Username').fill(PROBLEM_USER);
+    await page.getByPlaceholder('Password').fill(PASSWORD);
+    await page.getByText('Login').click();
+
+    await expect(page).toHaveURL('/inventory.html');
+}
+
+
+
+/* On vaja erinevad logimise funktsioonid erinevate kasutajate jaoks
 test.beforeEach(
     async ({ page }) => {
         await page.goto('/');
@@ -12,7 +35,7 @@ test.beforeEach(
 
         await expect(page).toHaveURL('/inventory.html');
     }
-)
+) */
 
 /*
 test("sisselogimine", async ({page}) => {
@@ -35,6 +58,8 @@ test("login: vale parool", async ({page}) => {
 */
 
 test("Ostukorvi toidu lisamine", async ({ page }) => {
+    await login_standard_user(page);
+
     let firstElement = page.locator("id=add-to-cart-sauce-labs-backpack") 
     await firstElement.click();
     let cartBadge = page.locator(".shopping_cart_badge");
@@ -43,6 +68,8 @@ test("Ostukorvi toidu lisamine", async ({ page }) => {
 
 // 2. Toodete leht
 test("Toodete leht Name A to Z", async ({ page }) => {
+    await login_standard_user(page);
+
     let sortSelect = page.locator(".product_sort_container");
     await sortSelect.selectOption({ label: "Name (A to Z)" });
     await expect(sortSelect).toHaveValue("az");
@@ -54,6 +81,8 @@ test("Toodete leht Name A to Z", async ({ page }) => {
 });
 
 test("Toodete leht Name Z to A", async ({ page }) => {
+    await login_standard_user(page);
+
     let sortSelect = page.locator(".product_sort_container");
     await sortSelect.selectOption({ label: "Name (Z to A)" });
     await expect(sortSelect).toHaveValue("za");
@@ -65,6 +94,8 @@ test("Toodete leht Name Z to A", async ({ page }) => {
 });
 
 test("Toodete leht Price Low to High", async ({ page }) => {
+    await login_standard_user(page);
+
     let sortSelect = page.locator(".product_sort_container");
     await sortSelect.selectOption({ label: "Price (low to high)" });
     await expect(sortSelect).toHaveValue("lohi");
@@ -77,6 +108,8 @@ test("Toodete leht Price Low to High", async ({ page }) => {
 });
 
 test("Toodete leht Price High to Low", async ({ page }) => {
+    await login_standard_user(page);
+
     let sortSelect = page.locator(".product_sort_container");
     await sortSelect.selectOption({ label: "Price (high to low)" });
     await expect(sortSelect).toHaveValue("hilo");
@@ -91,6 +124,8 @@ test("Toodete leht Price High to Low", async ({ page }) => {
 
 // 3. Ostukorv
 test("Ostukorv 2 toodete lisamine, 1 eemaldamine", async ({ page }) => {
+    await login_standard_user(page);
+    
     // Lisame 2 toodet
     let firstElement = page.locator("id=add-to-cart-sauce-labs-backpack")
     await firstElement.click();
@@ -131,6 +166,8 @@ test("Ostukorv 2 toodete lisamine, 1 eemaldamine", async ({ page }) => {
 
 // 4. Checkout (kuni „Overview“)
 test("Сheckout kuni Overview", async ({ page }) => {
+    await login_standard_user(page);
+
     let firstElement = page.locator("id=add-to-cart-sauce-labs-backpack")
     await firstElement.click();
     let secondElement = page.locator("id=add-to-cart-sauce-labs-bolt-t-shirt")
@@ -162,6 +199,8 @@ test("Сheckout kuni Overview", async ({ page }) => {
 
 // 5. Seisundi nullimine
 test("Seisundi nullimine", async ({ page }) => {
+    await login_standard_user(page);
+
     let firstElement = page.locator("id=add-to-cart-sauce-labs-backpack")
     await firstElement.click();
     
@@ -179,3 +218,38 @@ test("Seisundi nullimine", async ({ page }) => {
     // Kontrollime et ostukorv on tühi
     await expect(page.locator(".shopping_cart_badge")).not.toBeVisible();
 });
+
+// ===== Uued testcase`id =====
+
+// 1. Inventory ilma sisselogimiseta → redirect
+test("Inventory ilma sisselogimiseta → redirect", async ({ page }) => {
+    await page.goto('/inventory.html');
+    await expect(page).toHaveURL('/');
+
+    // Kontrollime, et sisselogimise vorm on nähtav
+    await expect(page.locator('id=user-name')).toBeVisible();
+    await expect(page.locator('id=password')).toBeVisible();
+    await expect(page.locator('id=login-button')).toBeVisible();
+});
+
+// 2. Cart ilma sisselogimiseta → redirect
+test("Cart ilma sisselogimiseta → redirect", async ({ page }) => {
+    await page.goto('/cart.html');
+    await expect(page).toHaveURL('/');
+
+    // Kontrollime, et sisselogimise vorm on nähtav
+    await expect(page.locator('id=user-name')).toBeVisible();
+    await expect(page.locator('id=password')).toBeVisible();
+    await expect(page.locator('id=login-button')).toBeVisible();
+});
+
+// 3. Kasutaja problem_user: lisamine korvi töötab
+test("Kasutaja problem_user: lisamine korvi töötab", async ({ page }) => {
+    await login_problem_user(page);
+
+    await page.goto('/inventory.html');
+    await page.locator("id=add-to-cart-sauce-labs-backpack").click();
+    await expect(page.locator(".shopping_cart_badge")).toHaveText("1");
+});
+
+// 4. Kasutaja performance_glitch_user: kataloog renderdub
